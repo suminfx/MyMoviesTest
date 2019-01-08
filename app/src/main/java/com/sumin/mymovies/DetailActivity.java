@@ -2,8 +2,11 @@ package com.sumin.mymovies;
 
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
+import android.net.Uri;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -13,9 +16,19 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
+import com.sumin.mymovies.adapters.ReviewAdapter;
+import com.sumin.mymovies.adapters.TrailerAdapter;
 import com.sumin.mymovies.data.FavouriteMovie;
 import com.sumin.mymovies.data.MainViewModel;
 import com.sumin.mymovies.data.Movie;
+import com.sumin.mymovies.data.Review;
+import com.sumin.mymovies.data.Trailer;
+import com.sumin.mymovies.utils.JSONUtils;
+import com.sumin.mymovies.utils.NetworkUtils;
+
+import org.json.JSONObject;
+
+import java.util.ArrayList;
 
 public class DetailActivity extends AppCompatActivity {
 
@@ -26,6 +39,11 @@ public class DetailActivity extends AppCompatActivity {
     private TextView textViewRating;
     private TextView textViewReleaseDate;
     private TextView textViewOverview;
+
+    private RecyclerView recyclerViewTrailers;
+    private RecyclerView recyclerViewReviews;
+    private ReviewAdapter reviewAdapter;
+    private TrailerAdapter trailerAdapter;
 
     private int id;
     private Movie movie;
@@ -82,6 +100,27 @@ public class DetailActivity extends AppCompatActivity {
         textViewReleaseDate.setText(movie.getReleaseDate());
         textViewRating.setText(Double.toString(movie.getVoteAverage()));
         setFavourite();
+        recyclerViewTrailers = findViewById(R.id.recyclerViewTrailers);
+        recyclerViewReviews = findViewById(R.id.recyclerViewReviews);
+        reviewAdapter = new ReviewAdapter();
+        trailerAdapter = new TrailerAdapter();
+        trailerAdapter.setOnTrailerClickListener(new TrailerAdapter.OnTrailerClickListener() {
+            @Override
+            public void onTrailerClick(String url) {
+                Intent intentToTrailer = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                startActivity(intentToTrailer);
+            }
+        });
+        recyclerViewReviews.setLayoutManager(new LinearLayoutManager(this));
+        recyclerViewTrailers.setLayoutManager(new LinearLayoutManager(this));
+        recyclerViewReviews.setAdapter(reviewAdapter);
+        recyclerViewTrailers.setAdapter(trailerAdapter);
+        JSONObject jsonObjectTrailers = NetworkUtils.getJSONForVideos(movie.getId());
+        JSONObject jsonObjectReviews = NetworkUtils.getJSONForReviews(movie.getId());
+        ArrayList<Trailer> trailers = JSONUtils.getTrailersFromJSON(jsonObjectTrailers);
+        ArrayList<Review> reviews = JSONUtils.getReviewsFromJSON(jsonObjectReviews);
+        reviewAdapter.setReviews(reviews);
+        trailerAdapter.setTrailers(trailers);
     }
 
     public void onClickChangeFavourite(View view) {
