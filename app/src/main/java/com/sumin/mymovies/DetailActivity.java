@@ -42,6 +42,8 @@ public class DetailActivity extends AppCompatActivity {
     private TextView textViewReleaseDate;
     private TextView textViewOverview;
     private ScrollView scrollViewInfo;
+    private TextView textViewLabelReviews;
+    private TextView textViewLabelTrailers;
 
     private RecyclerView recyclerViewTrailers;
     private RecyclerView recyclerViewReviews;
@@ -85,6 +87,8 @@ public class DetailActivity extends AppCompatActivity {
         setContentView(R.layout.activity_detail);
         lang = Locale.getDefault().getLanguage();
         imageViewBigPoster = findViewById(R.id.imageViewBigPoster);
+        textViewLabelReviews = findViewById(R.id.textViewLabelReviews);
+        textViewLabelTrailers = findViewById(R.id.textViewLabelTrailers);
         textViewTitle = findViewById(R.id.textViewTitle);
         textViewOriginalTitle = findViewById(R.id.textViewOriginalTitle);
         textViewRating = findViewById(R.id.textViewRating);
@@ -128,6 +132,12 @@ public class DetailActivity extends AppCompatActivity {
         ArrayList<Review> reviews = JSONUtils.getReviewsFromJSON(jsonObjectReviews);
         reviewAdapter.setReviews(reviews);
         trailerAdapter.setTrailers(trailers);
+        if (trailers.isEmpty()) {
+            textViewLabelTrailers.setVisibility(View.INVISIBLE);
+        }
+        if (reviews.isEmpty()) {
+            textViewLabelReviews.setVisibility(View.INVISIBLE);
+        }
         scrollViewInfo.smoothScrollTo(0,0);
     }
 
