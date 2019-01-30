@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -24,8 +25,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.sumin.mymovies.adapters.MovieAdapter;
+import com.sumin.mymovies.api.ApiFactory;
+import com.sumin.mymovies.api.ApiService;
 import com.sumin.mymovies.data.MainViewModel;
 import com.sumin.mymovies.data.Movie;
+import com.sumin.mymovies.data.MovieItem;
 import com.sumin.mymovies.utils.JSONUtils;
 import com.sumin.mymovies.utils.NetworkUtils;
 
@@ -36,6 +40,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import io.reactivex.Scheduler;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
+
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<JSONObject> {
 
     private Switch switchSort;
@@ -44,6 +54,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     private TextView textViewTopRated;
     private TextView textViewPopularity;
     private ProgressBar progressBarLoading;
+
+    private CompositeDisposable compositeDisposable;
 
     private MainViewModel viewModel;
 
@@ -91,6 +103,22 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        //
+        compositeDisposable = new CompositeDisposable();
+        ApiFactory apiFactory = ApiFactory.getInstance();
+        ApiService apiService = apiFactory.getApiService();
+        Disposable disposable = apiService.getMovies("3811dffbd8bc87f702dad54554f272a9", "ru-Ru", NetworkUtils.POPULARITY, 1000, 2)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(movies -> {
+                    for (MovieItem movie : movies.getMovies()) {
+                        Log.i("MyResult", movie.getTitle());
+                    }
+                }, throwable -> {
+                    Log.i("MyResult", throwable.getMessage());
+                });
+        compositeDisposable.add(disposable);
+        //
         lang = Locale.getDefault().getLanguage();
         loaderManager = LoaderManager.getInstance(this);
         viewModel = ViewModelProviders.of(this).get(MainViewModel.class);
@@ -205,6 +233,14 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     @Override
     public void onLoaderReset(@NonNull Loader<JSONObject> loader) {
 
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (compositeDisposable != null) {
+            compositeDisposable.dispose();
+        }
+        super.onDestroy();
     }
 }
 
